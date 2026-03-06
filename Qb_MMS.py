@@ -65,10 +65,12 @@ def resout_mms(n, deff, k, r_max, dt, t_final):
     CL: centre -> Gear ; bord -> Dirichlet g(t)=0
     Retourne r, t, C_num (shape: (Nt+1, N))
     """
+    #Maillage spatial
     n = int(n)
     dr = r_max / (n - 1)
     rvec = np.linspace(0.0, r_max, n)
 
+    #Maillage temporel
     Nt = int(np.round(t_final / dt))
     tvec = np.linspace(0.0, Nt * dt, Nt + 1)
 
@@ -77,21 +79,20 @@ def resout_mms(n, deff, k, r_max, dt, t_final):
     C  = np.zeros((Nt + 1, n), dtype=float)
     C[0, :] = Cn
 
+    #Initialisation de la matrice A et du vecteur b
     A = np.zeros((n, n), dtype=float)
     b = np.zeros(n, dtype=float)
 
     for nstep in range(Nt):
         tn1 = tvec[nstep + 1]
-        A.fill(0.0); b.fill(0.0)
+        A.fill(0.0); b.fill(0.0)            # réinitialisation à chaque pas de temps (A et b dépendent de tn1 à cause de f_MMS)
 
-        # i=0 : Gear (Neumann) -> (-3 C0 + 4 C1 - C2) / (2 dr) = 0
-        A[0, 0] = -3.0
+        A[0, 0] = -3.0                      # i=0 : Gear (Neumann) -> (-3 C0 + 4 C1 - C2) / (2 dr) = 0
         A[0, 1] =  4.0
         A[0, 2] = -1.0
         b[0]    =  0.0
 
-        # i=1..N-2 : BE + DF2
-        for i in range(1, n - 1):
+        for i in range(1, n - 1):           # i=1..N-1 : BE + DF2
             ri = rvec[i]
             aW = -deff / dr**2 + deff / (2.0 * ri * dr)
             aP =  (1.0 / dt) + k + 2.0 * deff / dr**2
@@ -101,15 +102,14 @@ def resout_mms(n, deff, k, r_max, dt, t_final):
             A[i, i]     = aP
             A[i, i + 1] = aE
 
-            # RHS : C^n/dt + f^{n+1}
             b[i] = Cn[i] / dt + f_mms(ri, tn1, deff, k, r_max)
 
-        # i=N-1 : Dirichlet g(t^{n+1}) = 0
-        A[n - 1, :]   = 0.0
+       
+        A[n - 1, :]   = 0.0                 # i=N-1 : Dirichlet g(t^{n+1}) = 0
         A[n - 1, n - 1] = 1.0
         b[n - 1]        = 0.0
 
-        Cnp1 = np.linalg.solve(A, b)
+        Cnp1 = np.linalg.solve(A, b)        # résolution du système linéaire A C^{n+1} = b
         C[nstep + 1, :] = Cnp1
         Cn = Cnp1
 
@@ -122,68 +122,61 @@ def resout_mms(n, deff, k, r_max, dt, t_final):
 if __name__ == "__main__":
 
     # Paramètres de résolution
-    N       = 101
+    N       = 100
     DT      = 5e-3
     T_FINAL = 20.0
     
-    r, t, C = resout_mms(N, DEFF, K, R, DT, T_FINAL)
-    C_exact = C_mms(r[None, :], t[:, None], R)   # shape (Nt+1, N)
-    F_exacte = f_mms(r[:, None], t[None, :], DEFF, K, R)
+    r_num, t_num, C_num = resout_mms(N, DEFF, K, R, DT, T_FINAL)
+
+    r_exact= np.linspace(0.0, R, 100)
+    t_exact= np.linspace(0.0, T_FINAL, 100)
+    C_exact = C_mms(r_exact[None, :], t_exact[:, None], R)   # shape (Nt+1, N)
+    F_exact = f_mms(r_exact[:, None], t_exact[None, :], DEFF, K, R)
     
     #Tracer MMS
     r_values = [0.0, 0.25*R, 0.5*R, 0.75*R, 0.9*R] 
-    plt.figure(figsize=(6.6, 4.6))
-    for rv in r_values:
-        i = np.argmin(np.abs(r - rv))
-        label = fr"r = {r[i]:.3f} m"
-        plt.plot(t, C[:,i], lw=2, label=label)
+    # plt.figure(figsize=(6.6, 4.6))
+    # for rv in r_values:
+    #     i = np.argmin(np.abs(r_num - rv))
+    #     label = fr"r = {r_num[i]:.3f} m"
+    #     plt.plot(t_num, C_num[:,i], lw=2, label=label)
 
-    plt.xlabel('t (s)')
-    plt.ylabel('C_MMS (mol/m³)')
-    plt.title('Séries temporelles C_MMS(t) à plusieurs rayons')
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    # plt.xlabel('t (s)')
+    # plt.ylabel('C_MMS (mol/m³)')
+    # plt.title('Séries temporelles C_MMS(t) à plusieurs rayons')
+    # plt.grid(True, alpha=0.3)
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.show()
 
-    #Tracer terme source f_MMS
-    r_values = [0.0, 0.25*R, 0.5*R, 0.75*R, 0.9*R] 
-    plt.figure(figsize=(6.6, 4.6))
-    for rv in r_values:
-        i = np.argmin(np.abs(r - rv))
-        label = fr"r = {r[i]:.3f} m"
-        plt.plot(t, F_exacte[i, :], lw=2, label=label)
+    # #Tracer terme source f_MMS
+    # r_values = [0.0, 0.25*R, 0.5*R, 0.75*R, 0.9*R] 
+    # plt.figure(figsize=(6.6, 4.6))
+    # for rv in r_values:
+    #     i = np.argmin(np.abs(r_num - rv))
+    #     label = fr"r = {r_num[i]:.3f} m"
+    #     plt.plot(t_exact, F_exact[i, :], lw=2, label=label)
 
-    plt.xlabel('t (s)')
-    plt.ylabel('f_MMS (mol/m³/s)')
-    plt.title('Séries temporelles f_MMS(t) à plusieurs rayons')
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
+    # plt.xlabel('t (s)')
+    # plt.ylabel('f_MMS (mol/m³/s)')
+    # plt.title('Séries temporelles f_MMS(t) à plusieurs rayons')
+    # plt.grid(True, alpha=0.3)
+    # plt.legend()
+    # plt.tight_layout()
+    # plt.show()
 
 
     # Profils radiaux Num vs MMS
+    t_values = [0.0, 0.25*T_FINAL, 0.5*T_FINAL, 0.75*T_FINAL, T_FINAL]
     plt.figure(figsize=(6.8,4.6))
-    for j in [0, int(0.3*(len(t)-1)), len(t)-1]:
-        plt.plot(r, C[j, :], 'o-', ms=3, lw=1.5, label=f'Num t={t[j]:.2f}s')
-        plt.plot(r, C_exact[j, :], 'k--', lw=2, label='MMS' if j==0 else None)
+    for tv in t_values:
+        j = np.argmin(np.abs(t_num - tv))
+        plt.plot(r_num, C_num[j, :], 'o-', ms=3, lw=1.5, label=f'Num t={t_num[j]:.2f}s')
+        k = np.argmin(np.abs(t_exact - tv))
+        plt.plot(r_exact, C_exact[k, :], 'k--', lw=2, label='MMS' if j==0 else None)
     plt.xlabel('r (m)')
     plt.ylabel('C (mol/m^3)')
-    plt.title('Profils radiaux C(r) à plusieurs temps')
-    plt.grid(True, alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
-    # Séries temporelles Num vs MMS à quelques rayons
-    plt.figure(figsize=(6.8,4.6))
-    for i in [0, len(r)//2, len(r)-1]:
-        plt.plot(t, C[:, i], lw=2, label=f'Num r={r[i]:.3f} m')
-        plt.plot(t, C_exact[:, i], 'k--', lw=1.5, alpha=0.8)
-    plt.xlabel('t (s)')
-    plt.ylabel('C (mol/m^3)')
-    plt.title('Séries temporelles C(t) à plusieurs rayons comparaison Num vs MMS')
+    plt.title('Comparaison des profils radiaux C(r) Num vs MMS à plusieurs temps pour N = 100')
     plt.grid(True, alpha=0.3)
     plt.legend()
     plt.tight_layout()
