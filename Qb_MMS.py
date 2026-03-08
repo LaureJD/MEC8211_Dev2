@@ -150,20 +150,20 @@ if __name__ == "__main__":
     # plt.show()
 
     # #Tracer terme source f_MMS
-    # r_values = [0.0, 0.25*R, 0.5*R, 0.75*R, 0.9*R] 
-    # plt.figure(figsize=(6.6, 4.6))
-    # for rv in r_values:
-    #     i = np.argmin(np.abs(r_num - rv))
-    #     label = fr"r = {r_num[i]:.3f} m"
-    #     plt.plot(t_exact, F_exact[i, :], lw=2, label=label)
+    r_values = [0.0, 0.25*R, 0.5*R, 0.75*R, R] 
+    plt.figure(figsize=(6.6, 4.6))
+    for rv in r_values:
+        i = np.argmin(np.abs(r_num - rv))
+        label = fr"r = {r_num[i]:.3f} m"
+        plt.plot(t_exact, F_exact[i, :], lw=2, label=label)
 
-    # plt.xlabel('t (s)')
-    # plt.ylabel('f_MMS (mol/m³/s)')
-    # plt.title('Séries temporelles f_MMS(t) à plusieurs rayons')
-    # plt.grid(True, alpha=0.3)
-    # plt.legend()
-    # plt.tight_layout()
-    # plt.show()
+    plt.xlabel('t (s)')
+    plt.ylabel('f_MMS (mol/m³/s)')
+    plt.title('Séries temporelles f_MMS(t) à plusieurs rayons')
+    plt.grid(True, alpha=0.3)
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
 
 
     # Profils radiaux Num vs MMS
