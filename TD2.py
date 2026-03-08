@@ -13,7 +13,6 @@ Created on: 27/02/2026
 
 import numpy as np
 import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
 
 class Parameters():
     """Container for all physical parameters"""
@@ -321,4 +320,5 @@ def main():
 
 
 if __name__ == "__main__":
+
     solver = main()
