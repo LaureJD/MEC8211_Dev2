@@ -3,8 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 #Parametre pour avoir un Da de 1
-Deff = 5.0e-5  # m^2/s
-k = 4.0e-5
+Deff = 5.0e-10  # m^2/s
+k = 4.0e-2
 R=0.5
 n=100
 
