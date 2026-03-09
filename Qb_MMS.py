@@ -32,6 +32,10 @@ import Qa_non_stationnaire as Qa
 DEFF = 1.0e-2   # m^2/s (choix pour MMS : simple et rapide)
 K    = 1.0e-1   # s^-1
 R    = 0.5      # m
+N=11
+DT=10000
+T_FINAL=1000000
+
 
 # ----------------------------
 # Définition symbolique de la MMS
@@ -116,6 +120,24 @@ def resout_mms(n, deff, k, r_max, dt, t_final):
     return rvec, tvec, C
 
 
+# Dans ton fichier Question b)
+# 1. Calculer la solution numérique avec le terme source
+r_num, t_num, C_num = Qa.resout_transitoire_radial(
+    n=N, deff=DEFF, k=K, ce=0.0, r_max=R, dt=DT, t_final=T_FINAL, f_func=f_mms
+)
+
+# 2. Calculer la solution exacte (MMS) aux mêmes points
+# On utilise meshgrid pour avoir les dimensions (temps, espace)
+R_mesh, T_mesh = np.meshgrid(r_num, t_num)
+C_exacte = C_mms(R_mesh, T_mesh, R)
+
+# 3. Calculer l'erreur maximale
+erreur = np.max(np.abs(C_num - C_exacte))
+print(f"Erreur L-infini : {erreur:.2e}")
+
+print(C_mms)
+print(f_mms)
+print(g_dir)
 # ----------------------------
 # MAIN — Graphiques
 # ----------------------------
@@ -156,6 +178,11 @@ if __name__ == "__main__":
         i = np.argmin(np.abs(r_num - rv))
         label = fr"r = {r_num[i]:.3f} m"
         plt.plot(t_exact, F_exact[i, :], lw=2, label=label)
+
+
+
+
+
 
     plt.xlabel('t (s)')
     plt.ylabel('f_MMS (mol/m³/s)')
