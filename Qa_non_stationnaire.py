@@ -166,7 +166,7 @@ if __name__ == "__main__":
 
 
  # --- Figure 2 : courbes C(t) pour plusieurs rayons
-    r_values = [0.0, 0.25*R, 0.5*R, 0.75*R, 0.90*R] 
+    r_values = [0.0, 0.25*R, 0.5*R, 0.75*R, 0.9*R] 
     plt.figure(figsize=(6.6, 4.6))
     for rv in r_values:
         i = np.argmin(np.abs(r - rv))
