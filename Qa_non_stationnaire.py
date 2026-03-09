@@ -147,8 +147,9 @@ def resout_transitoire_radial(n, deff, k, ce, r_max, dt, t_final, c_init=None):
 if __name__ == "__main__":
     N = 11  # nombre de points radiaux (incluant 0 et R)
 
-    r, t, c= resout_transitoire_radial(N, DEFF, k, CE, R, dt=10000, t_final=4.0e9)
+    r, t, c= resout_transitoire_radial(N, DEFF, k, CE, R, dt=1000, t_final=4.0e9)
 
+<<<<<<< Updated upstream
     # --- Figure 1 : profil 3D C(r,t)
 
     # Rmesh, Tmesh = np.meshgrid(r, t)  # maillages 2D
@@ -167,17 +168,33 @@ if __name__ == "__main__":
 
  # --- Figure 2 : courbes C(t) pour plusieurs rayons
     r_values = [0.0, 0.25*R, 0.5*R, 0.75*R, 0.90*R] 
+=======
+    # Figure 2 : courbes C(t) pour plusieurs rayons
+    #r_values = [0.0, 0.25*R, 0.5*R, 0.75*R, 0.9*R] 
+>>>>>>> Stashed changes
     plt.figure(figsize=(6.6, 4.6))
-    for rv in r_values:
-        i = np.argmin(np.abs(r - rv))
-        label = fr"r = {r[i]:.3f} m"
-        plt.plot(t, c[:, i], lw=2, label=label)
+    
+    # for rv in r:
+    #     i = np.argmin(np.abs(r - rv))
+    #     label = fr"r = {r[i]:.3f} m"
+    #     plt.plot(t, c[:, i], lw=2, label=label)
 
-    plt.xlabel('t (s)')
+    # plt.xlabel('t (s)')
+    # plt.ylabel('C (mol/m³)')
+    # plt.title('Séries temporelles C(t) à plusieurs rayons pour N=11')
+    # plt.grid(True, alpha=0.3)
+    # plt.legend(loc='upper right')
+    # plt.show()
+
+    plt.figure(figsize=(6.6, 4.6))
+    #for tv in [0, 1000, 2000, 1e3, 1e6, 1e9 ] :
+    for tv in [1e6, 1e7, 1e8, 1e9, 4e9 ] :
+        j = np.argmin(np.abs(t - tv))
+        label = fr"t = {t[j]:.2e} s"
+        plt.plot(r, c[j, :], lw=2, label=label)
+    plt.xlabel('r (m)')
     plt.ylabel('C (mol/m³)')
-    plt.title('Séries temporelles C(t) à plusieurs rayons')
+    plt.title('Profils radiaux C(r) à plusieurs temps pour N=11')
     plt.grid(True, alpha=0.3)
-    plt.legend()
-    plt.tight_layout()
+    plt.legend(loc='upper left')
     plt.show()
-
