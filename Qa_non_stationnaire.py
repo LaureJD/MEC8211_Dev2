@@ -31,7 +31,7 @@ R = 0.5  # m  (rayon, D=1 m)
 # Fonctions utilitaires
 # ----------------------------
 
-def resout_transitoire_radial(n, deff, k, ce, r_max, dt, t_final, c_init=None):
+def resout_transitoire_radial(n, deff, k, ce, R, dt, t_final, c_init=None):
     """
     Résout le problème non stationnaire en r sur N points (i=0..N-1) avec r_N=R,
     schéma implicite Backward Euler en temps + DF2 en espace.
@@ -46,22 +46,14 @@ def resout_transitoire_radial(n, deff, k, ce, r_max, dt, t_final, c_init=None):
 
     Paramètres
     ---------
-    n : int
-        nombre de noeuds radiaux (incluant 0 et R)
-    deff : float
-        diffusivité effective (m^2/s)
-    k : float
-        constante de réaction (s^-1)
-    ce : float
-        concentration imposée au bord (mol/m^3)
-    r_max : float
-        rayon R (m)
-    dt : float
-        pas de temps (s)
-    t_final : float
-        temps final de simulation (s)
-    c_init : float ou array_like (optionnel)
-        condition initiale. Si None, on prend C(r,0)=0.
+    n : nombre de noeuds radiaux (incluant 0 et R)
+    deff : diffusivité effective (m^2/s)
+    k : constante de réaction (s^-1)
+    ce : concentration imposée au bord (mol/m^3)
+    R : rayon à l'extrémité(m)
+    dt : pas de temps (s)
+    t_final : temps final de simulation (s)
+    C0 : condition initiale nulle : C(r,0)=0.
 
     Renvoie
     -------
@@ -75,38 +67,27 @@ def resout_transitoire_radial(n, deff, k, ce, r_max, dt, t_final, c_init=None):
 
     # Maillage spatial
     n = int(n)
-    dr = r_max / (n - 1)
-    r = np.linspace(0.0, r_max, n)
+    dr = R / (n - 1)
+    r = np.linspace(0.0, R, n)
 
     # Maillage temporel
     Nt = int(np.round(t_final / dt))
-    if Nt > 200000:
-        print(f"Warning: number of time steps Nt={Nt} is very large; this may take a long time."
-              " Consider increasing dt or reducing t_final.")
     t = np.linspace(0.0, Nt * dt, Nt + 1)
 
     # Condition initiale
-    if c_init is None:
-        Cn = np.zeros(n, dtype=float)
-    else:
-        c0 = np.array(c_init, dtype=float)
-        Cn = c0 if c0.size == n else np.full(n, float(c_init), dtype=float)
+    Cn = np.zeros(n, dtype=float)
 
     # Tableau solution
     C = np.zeros((Nt + 1, n), dtype=float)
     C[0, :] = Cn
 
-    # Pré-allocations pour A et b ; nous allons construire la matrice
-    # une seule fois car elle ne dépend que de paramètres constants.
+    # Construction de la matrice A (constante dans le temps) et du vecteur b
     a_mat = np.zeros((n, n), dtype=float)
 
-    # --- assemble matrix A (constante dans la boucle temporelle)
-    # i = 0 (centre) : symétrie
-    a_mat[0, 0] = (1.0 / dt) + k + 2.0 * deff / dr**2
+    a_mat[0, 0] = (1.0 / dt) + k + 2.0 * deff / dr**2   # i=0 : centre (Gear)
     a_mat[0, 1] = -2.0 * deff / dr**2
-
-    # i = 1..N-2 (intérieurs)
-    for i in range(1, n - 1):
+    
+    for i in range(1, n - 1):           # i = 1..N-2 (intérieurs)
         ri = r[i]
         aW = -deff / dr**2 + deff / (2.0 * ri * dr)
         aP = (1.0 / dt) + k + 2.0 * deff / dr**2
@@ -115,25 +96,20 @@ def resout_transitoire_radial(n, deff, k, ce, r_max, dt, t_final, c_init=None):
         a_mat[i, i] = aP
         a_mat[i, i + 1] = aE
 
-    # i = N-1 (bord) : Dirichlet
-    a_mat[n - 1, n - 1] = 1.0
+    a_mat[n - 1, n - 1] = 1.0           # i = N-1 (bord) : Dirichlet
 
-    # Factorisation rapide : inverse de A (taille petite, donc acceptable)
-    invA = np.linalg.inv(a_mat)
+    invA = np.linalg.inv(a_mat)         # inverse de A 
 
-    # Tableau b initialisé hors boucle pour éviter reconstruction à chaque pas
+    # Construction du vecteur b 
     b_vec = np.zeros(n, dtype=float)
 
-    # Boucle en temps (Nt pas de temps)
+    #Cacule de C^{n+1} à chaque pas de temps
     for nstep in range(Nt):
-        # remplissage vectorisé de b
         b_vec[:] = Cn / dt           # Cn[0..n-2]/dt, la dernière valeur sera écrasée
         b_vec[-1] = ce               # condition au bord
 
-        # résolution via multiplication par l'inverse pré-calculé
-        Cnp1 = invA @ b_vec
+        Cnp1 = invA @ b_vec             # multiplication par l'inverse de A pour obtenir C^{n+1
 
-        # stockage et préparation du pas suivant
         C[nstep + 1, :] = Cnp1
         Cn = Cnp1
 
@@ -149,7 +125,6 @@ if __name__ == "__main__":
 
     r, t, c= resout_transitoire_radial(N, DEFF, k, CE, R, dt=1000, t_final=4.0e9)
 
-<<<<<<< Updated upstream
     # --- Figure 1 : profil 3D C(r,t)
 
     # Rmesh, Tmesh = np.meshgrid(r, t)  # maillages 2D
@@ -168,13 +143,6 @@ if __name__ == "__main__":
 
  # --- Figure 2 : courbes C(t) pour plusieurs rayons
     r_values = [0.0, 0.25*R, 0.5*R, 0.75*R, 0.90*R] 
-=======
-    # Figure 2 : courbes C(t) pour plusieurs rayons
-    #r_values = [0.0, 0.25*R, 0.5*R, 0.75*R, 0.9*R] 
-<<<<<<< Updated upstream
->>>>>>> Stashed changes
-=======
->>>>>>> Stashed changes
     plt.figure(figsize=(6.6, 4.6))
     
     # for rv in r:
